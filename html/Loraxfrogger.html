@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Save The Truffula Trees</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    canvas {
+      background-color: #87CEEB;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = 600;
+    canvas.height = 600;
+
+    const gridSize = 50;
+    const rows = canvas.height / gridSize;
+    const cols = canvas.width / gridSize;
+
+    const frog = {
+      x: Math.floor(cols / 2) * gridSize,
+      y: (rows - 1) * gridSize,
+      width: gridSize,
+      height: gridSize,
+      color: 'orange',
+      passedRows: 0
+    };
+
+    const cars = [];
+    const carWidth = gridSize * 1.5;
+    const carHeight = gridSize * 0.8;
+    const carColors = ['red', 'blue', 'yellow', 'green'];
+
+    let gameOver = false;
+
+    function drawFrog() {
+      ctx.fillStyle = frog.color;
+      ctx.fillRect(frog.x, frog.y, frog.width, frog.height);
+    }
+
+    function drawCars() {
+      cars.forEach(car => {
+        ctx.fillStyle = car.color;
+        ctx.fillRect(car.x, car.y, car.width, car.height);
+      });
+    }
+
+    function updateCars() {
+      cars.forEach(car => {
+        car.x += car.speed;
+
+        if (car.speed > 0 && car.x > canvas.width) {
+          car.x = -car.width;
+        } else if (car.speed < 0 && car.x + car.width < 0) {
+          car.x = canvas.width;
+        }
+      });
+    }
+
+    function generateCars() {
+      cars.length = 0; // Clear existing cars
+      for (let i = 1; i < rows - 1; i++) {
+        if (i % 2 === 0) {
+          const speed = Math.random() * 2 + 1;
+          cars.push({
+            x: Math.random() * canvas.width,
+            y: i * gridSize,
+            width: carWidth,
+            height: carHeight,
+            color: carColors[Math.floor(Math.random() * carColors.length)],
+            speed: Math.random() > 0.5 ? speed : -speed
+          });
+        }
+      }
+    }
+
+    function detectCollision() {
+      for (const car of cars) {
+        if (
+          frog.x < car.x + car.width &&
+          frog.x + frog.width > car.x &&
+          frog.y < car.y + car.height &&
+          frog.y + frog.height > car.y
+        ) {
+          gameOver = true;
+        }
+      }
+    }
+
+    function resetFrog() {
+      frog.x = Math.floor(cols / 2) * gridSize;
+      frog.y = (rows - 1) * gridSize;
+    }
+
+    function handleKeyDown(e) {
+      if (gameOver) return;
+
+      let previousY = frog.y;
+
+      switch (e.key) {
+        case 'w':
+          if (frog.y - gridSize >= 0) frog.y -= gridSize;
+          break;
+        case 's':
+          if (frog.y + gridSize < canvas.height) frog.y += gridSize;
+          break;
+        case 'a':
+          if (frog.x - gridSize >= 0) frog.x -= gridSize;
+          break;
+        case 'd':
+          if (frog.x + gridSize < canvas.width) frog.x += gridSize;
+          break;
+      }
+
+      if (frog.y < previousY) {
+        frog.passedRows++;
+        cars.forEach(car => {
+          car.speed += 0.2;
+        });
+      }
+
+      if (frog.y === 0) {
+        resetFrog();
+        generateCars();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawFrog();
+      drawCars();
+
+      updateCars();
+      detectCollision();
+
+      if (gameOver) {
+        alert(`Game Over! You passed ${frog.passedRows} rows.`);
+        frog.passedRows = 0;
+        resetFrog();
+        generateCars();
+        gameOver = false;
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    generateCars();
+    gameLoop();
+  </script>
+</body>
+</html>
